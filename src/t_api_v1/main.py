@@ -10,6 +10,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from azure.cosmos import CosmosClient
+from azure.core.credentials import AzureKeyCredential
+from azure.search.documents import SearchClient
+from openai import AzureOpenAI
 
 load_dotenv()
 
@@ -156,10 +159,6 @@ def _search_with_azure(question: str) -> SearchResponse | None:
     )
     if not all(os.getenv(name) for name in required):
         return None
-
-    from azure.core.credentials import AzureKeyCredential
-    from azure.search.documents import SearchClient
-    from openai import AzureOpenAI
 
     search_client = SearchClient(
         endpoint=os.environ["AZURE_SEARCH_SERVICE_ENDPOINT"],
