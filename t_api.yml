@@ -1,0 +1,278 @@
+openapi: '3.0.3'
+
+info:
+  title: RAG Search API
+  version: '1.0.0'
+  description: 東方Projectに関する質問をRAG検索し、回答と情報源を返すAPI
+
+servers:
+  - url: https://api.server.test/v1
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: INVALID_PARAMETER
+        message:
+          type: string
+          example: "questionは1文字以上1000文字以内で入力してください"
+
+paths:
+  /evaluate:
+    post:
+      summary: "検索結果の評価を投稿する"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question_id
+                - evaluation
+              properties:
+                question_id:
+                  type: string
+                  description: 質問のID
+                  example: "1234567890"
+                evaluation:
+                  type: string
+                  description: 評価の内容
+                  enum:
+                        - correct
+                        - partially_correct
+                        - incorrect
+                  example: "correct"
+                reason:
+                  type: string
+                  description: 評価の理由（任意）
+                  example: "回答が正確で、情報源も信頼できる"
+                correct_answer:
+                  type: string
+                  description: 正しい回答（任意）
+                  example: "博麗霊夢は幻想郷の巫女です。"
+      responses:
+        '201':
+          description: 評価の投稿が成功しました
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    example: "評価の投稿が成功しました"
+        '400':  
+          description: リクエストパラメータが不正です
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: サーバー内部でエラーが発生しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /qa/{id}:
+    get:
+      summary: "CosmosDBから質問を取得する"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 質問のID
+          schema:
+            type: string
+            example: "1234567890"
+
+      responses:
+        '200':
+          description: 質問の取得が成功しました
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - question
+                  - answer
+                  - status
+                  - created_at
+                  - updated_at
+                properties:
+                  id:
+                    type: string
+                    description: 質問のID
+                    example: "1234567890"
+                  question:
+                    type: string
+                    description: 質問文
+                    example: "幻想郷の巫女は誰ですか"
+                  answer:
+                    type: string
+                    description: 回答
+                    example: "博麗霊夢は幻想郷の巫女です。"
+                  sources:
+                    type: array
+                    description: 回答の根拠となった情報源
+                    items:
+                      type: string
+                    example:
+                      - "ピクシブ百科事典『博麗霊夢』"
+                  status:
+                    type: string
+                    description: 質問のステータス
+                    enum:
+                      - processing
+                      - completed
+                      - failed
+                    example: "completed"
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: 質問の作成日時
+                    example: "2024-01-01T12:00:00Z"
+                  updated_at:
+                    type: string     
+                    format: date-time
+                    description: 質問の更新日時   
+                    example: "2024-01-02T12:00:00Z" 
+        '400':
+          description: リクエストパラメータが不正です
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: 指定されたIDの質問が見つかりませんでした
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: サーバー内部でエラーが発生しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: "CosmosDBに質問を登録する"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  description: 質問文
+                  minLength: 1
+                  maxLength: 1000
+                  example: "幻想郷の巫女は誰ですか"
+                status:
+                  type: string
+                  description: 質問のステータス
+                  enum:
+                    - processing
+                    - completed
+                    - failed
+                  example: "processing"
+      responses:
+        '201':
+          description: 質問の登録が成功しました
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - message
+                properties:
+                  id:
+                    type: string
+                    description: 登録された質問のID
+                    example: "1234567890"
+                  message:
+                    type: string
+                    example: "質問の登録が成功しました"
+
+        '400':
+          description: リクエストパラメータが不正です
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: サーバー内部でエラーが発生しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search:
+    get:
+      summary: 質問を元にRAG検索を行う
+      parameters:
+        - name: question
+          in: query
+          required: true
+          description: RAGに問い合わせる質問文
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 1000
+            example: "幻想郷の巫女は誰ですか"
+
+      responses:
+        '200':
+          description: RAG検索結果
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - answer
+                  - sources
+                properties:
+                  answer:
+                    type: string
+                    description: RAGによって生成された回答
+                    example: "博麗霊夢は幻想郷の巫女です。"
+
+                  sources:
+                    type: array
+                    description: 回答の根拠となった情報源
+                    items:
+                      type: string
+                    example:
+                      - "ピクシブ百科事典『博麗霊夢』"
+
+        '400':
+          description: リクエストパラメータが不正です
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: サーバー内部でエラーが発生しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'  
