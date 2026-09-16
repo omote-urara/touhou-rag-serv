@@ -47,6 +47,19 @@ wheels = [
 ]
 
 [[package]]
+name = "azure-cosmos"
+version = "4.17.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/b7/bd10308e5999dd6972cfbd361cda3c3390c7dff538db9d4226055fc96a37/azure_cosmos-4.17.0.tar.gz", hash = "sha256:38559f209ce13d135c07b12652d72d352bac6b6d6b3007006ce8fc174c815b07", size = 2487427, upload-time = "2026-09-09T21:25:22.496Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/25/335e03563df6dcb89f3b914afe31d43b7b5100155c7fd09d3e6891d7897c/azure_cosmos-4.17.0-py3-none-any.whl", hash = "sha256:505ce6a196c43d712a0bd9e3222fd74a8b599fdcc1940752d06a28dd06bd10d2", size = 505543, upload-time = "2026-09-09T21:25:24.894Z" },
+]
+
+[[package]]
 name = "azure-search-documents"
 version = "12.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -460,6 +473,7 @@ name = "t-api-v1"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "azure-cosmos" },
     { name = "azure-search-documents" },
     { name = "fastapi" },
     { name = "openai" },
@@ -469,6 +483,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "azure-cosmos", specifier = ">=4.0.0" },
     { name = "azure-search-documents", specifier = ">=12.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "openai", specifier = ">=1.0.0" },
